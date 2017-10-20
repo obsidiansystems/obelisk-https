@@ -43,6 +43,9 @@ let sslConfig' = if sslConfig == null then null else {
               ${if path != "/" then "rewrite ^${path}(.*)$ /$1 break;" else ""}
               proxy_pass http://127.0.0.1:${builtins.toString port};
               proxy_set_header Host $http_host;
+              proxy_set_header REMOTE_ADDR $remote_addr;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto ${if sslConfig' != null then "https" else "http"};
               proxy_read_timeout 300s;
               proxy_max_temp_file_size 4096m;
               client_max_body_size 1G;
