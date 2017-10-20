@@ -71,29 +71,31 @@ in {
       then sslInputPort sslConfig'.hostName
       else plainInputPort;
   };
-} // (if sslConfig' != null then {
-  networking.firewall.allowedTCPPorts = [ 443 ];
-  services.lighttpd = {
-    enable = true;
-    document-root = sslConfig'.acmeWebRoot;
-    port = 80;
-    enableModules = [ "mod_redirect" ];
-    extraConfig = ''
-      $HTTP["url"] !~ "^/\.well-known/acme-challenge" {
-        $HTTP["host"] =~ "^.*$" {
-          url.redirect = ( "^.*$" => "https://%0$0" )
+
+  imports = if sslConfig' == null then [] else [{
+    networking.firewall.allowedTCPPorts = [ 443 ];
+    services.lighttpd = {
+      enable = true;
+      document-root = sslConfig'.acmeWebRoot;
+      port = 80;
+      enableModules = [ "mod_redirect" ];
+      extraConfig = ''
+        $HTTP["url"] !~ "^/\.well-known/acme-challenge" {
+          $HTTP["host"] =~ "^.*$" {
+            url.redirect = ( "^.*$" => "https://%0$0" )
+          }
         }
-      }
-    '';
-  };
-  security.acme.certs.${sslConfig'.hostName} = {
-    webroot = sslConfig'.acmeWebRoot;
-    email = sslConfig'.adminEmail;
-    plugins = [ "fullchain.pem" "key.pem" "account_key.json" ];
-    postRun = ''
-      systemctl reload-or-restart nginx.service
-    '';
-    extraDomains = builtins.listToAttrs (map (subdomain: { name = "${subdomain}.${sslConfig'.hostName}"; value = null; }) sslConfig'.subdomains);
-  };
-} else {})
+      '';
+    };
+    security.acme.certs.${sslConfig'.hostName} = {
+      webroot = sslConfig'.acmeWebRoot;
+      email = sslConfig'.adminEmail;
+      plugins = [ "fullchain.pem" "key.pem" "account_key.json" ];
+      postRun = ''
+        systemctl reload-or-restart nginx.service
+      '';
+      extraDomains = builtins.listToAttrs (map (subdomain: { name = "${subdomain}.${sslConfig'.hostName}"; value = null; }) sslConfig'.subdomains);
+    };
+  }];
+}
 
