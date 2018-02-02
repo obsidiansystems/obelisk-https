@@ -24,7 +24,7 @@
 { config, options, pkgs, ... }:
 let sslConfig' = if sslConfig == null then null else {
       subdomains = []; #TODO(after 2017-02-01): Get wildcard certificates from LetsEncrypt: https://letsencrypt.org/2017/07/06/wildcard-certificates-coming-jan-2018.html
-      acmeWebRoot = "/srv/acme/";
+      acmeWebRoot = config.security.acme.directory;
     } // sslConfig;
 
     inherit (pkgs.lib) concatStringsSep mapAttrs optional;
@@ -33,8 +33,8 @@ let sslConfig' = if sslConfig == null then null else {
     '';
     sslInputPort = hostName: ''
       listen 443 ssl;
-      ssl_certificate /var/lib/acme/${hostName}/fullchain.pem;
-      ssl_certificate_key /var/lib/acme/${hostName}/key.pem;
+      ssl_certificate ${config.security.acme.directory}/${hostName}/fullchain.pem;
+      ssl_certificate_key ${config.security.acme.directory}/${hostName}/key.pem;
       ssl_protocols  TLSv1 TLSv1.1 TLSv1.2;  # don't use SSLv3 ref: POODLE
     '';
     nginxService = { locations, inputPort }:
