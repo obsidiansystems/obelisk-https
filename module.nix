@@ -20,6 +20,7 @@
   # adminEmail: The email address to report certificate issues to
   # subdomains: (optional) a list of subdomains that should be included in the SSL certificate
   # acmeWebRoot: (optional) the location from which to serve LetsEncrypt's challenges
+, nginxConfig ? { locations = defaultLocations: defaultLocations; }
 }:
 { config, options, pkgs, ... }:
 let sslConfig' = if sslConfig == null then null else {
@@ -64,7 +65,7 @@ let sslConfig' = if sslConfig == null then null else {
 in {
   networking.firewall.allowedTCPPorts = [ 80 ];
   services.nginx = nginxService {
-    locations = {
+    locations = nginxConfig.locations {
       "/" = backendPort;
     };
     inputPort = if sslConfig != null
